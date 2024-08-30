@@ -2,15 +2,15 @@
 
 namespace App\Services\ABTest;
 
+use App\Contracts\ABTest\TestServiceContract;
 use App\Enums\Session\EventTypeEnum;
 use App\Models\ABTest\Test;
 use App\Models\ABTest\Variant;
 use App\Models\Session;
 use Illuminate\Contracts\Session\Session as SessionContract;
 use Illuminate\Support\Facades\Log;
-use Symfony\Component\ErrorHandler\Debug;
 
-class TestService {
+class TestService implements TestServiceContract {
 
     private const SESSION_AB_TESTS_KEY = 'ab_tests';
 
@@ -28,7 +28,6 @@ class TestService {
      * @return bool
      */
     public function hasTestForSession(string $test): bool {
-        //dd($this->getTestsFromSession());
         return isset($this->getTestsFromSession()[$test]);
     }
 

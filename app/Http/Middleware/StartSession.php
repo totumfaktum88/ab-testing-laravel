@@ -2,9 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Contracts\ABTest\TestServiceContract;
 use App\Enums\Session\EventTypeEnum;
 use App\Models\Session;
-use App\Services\ABTest\TestService;
 use Closure;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Session\Session as SessionContract;
@@ -18,7 +18,7 @@ class StartSession
     public function __construct(
         private readonly Application $app,
         private readonly SessionContract $sessionManager,
-        private readonly TestService $testService
+        private readonly TestServiceContract $testService
     ) {
     }
 
