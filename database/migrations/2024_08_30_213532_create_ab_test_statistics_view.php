@@ -15,14 +15,12 @@ return new class extends Migration
         DB::statement(
             "CREATE OR REPLACE VIEW ab_test_statistics_view AS
             SELECT
-                JSON_UNQUOTE(JSON_EXTRACT(e.data, '$.test_id')) AS test_id,
                 JSON_UNQUOTE(JSON_EXTRACT(e.data, '$.test_name')) AS test_name,
-                JSON_UNQUOTE(JSON_EXTRACT(e.data, '$.variant_id')) AS variant_id,
                 JSON_UNQUOTE(JSON_EXTRACT(e.data, '$.variant_name')) AS variant_name,
                 COUNT(e.data) as count
             FROM events e
             WHERE
-                JSON_CONTAINS_PATH(e.data, 'one', '$.test_id')
+                JSON_CONTAINS_PATH(e.data, 'one', '$.test_name')
             GROUP BY e.data"
         );
     }

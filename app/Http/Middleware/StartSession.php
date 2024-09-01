@@ -42,7 +42,7 @@ class StartSession
             $this->sessionManager->put(self::DB_SESSION_ID_KEY, $session->id);
         }
 
-        $this->testService->loadTestsForSession($session);
+        $this->testService->loadTestsToStore($session);
 
         $this->app->instance(Session::class, $session);
 

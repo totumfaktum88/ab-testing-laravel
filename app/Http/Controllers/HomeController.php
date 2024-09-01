@@ -24,24 +24,24 @@ class HomeController extends Controller
         $pricingButtonLabel = null;
         $featureType = null;
 
-        if( $this->service->hasTestForSession('landing-animation') ) {
-            $hero = $this->service->getVariantFromSession('landing-animation');
+        if( $this->service->hasTestInStore('landing-animation') ) {
+            $hero = $this->service->getVariantFromStore('landing-animation');
         }
 
-        if( $this->service->hasTestForSession('contact-alignment') ) {
-            $contactAlignment = $this->service->getVariantFromSession('contact-alignment');
+        if( $this->service->hasTestInStore('contact-alignment') ) {
+            $contactAlignment = $this->service->getVariantFromStore('contact-alignment');
         }
 
-        if( $this->service->hasTestForSession('pricing-alignment') ) {
-            $pricingAlignment = $this->service->getVariantFromSession('pricing-alignment');
+        if( $this->service->hasTestInStore('pricing-alignment') ) {
+            $pricingAlignment = $this->service->getVariantFromStore('pricing-alignment');
         }
 
-        if( $this->service->hasTestForSession('pricing-button-labels') ) {
-            $pricingButtonLabel = $this->service->getVariantFromSession('pricing-button-labels');
+        if( $this->service->hasTestInStore('pricing-button-labels') ) {
+            $pricingButtonLabel = $this->service->getVariantFromStore('pricing-button-labels');
         }
 
-        if( $this->service->hasTestForSession('feature-types') ) {
-            $featureType = $this->service->getVariantFromSession('feature-types');
+        if( $this->service->hasTestInStore('feature-types') ) {
+            $featureType = $this->service->getVariantFromStore('feature-types');
         }
 
         return [

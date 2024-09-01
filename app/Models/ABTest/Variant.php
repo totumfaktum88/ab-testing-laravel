@@ -2,7 +2,10 @@
 
 namespace App\Models\ABTest;
 
+use App\Contracts\ABTest\Model\VariantContract;
+use Database\Factories\AbTest\VariantFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,7 +22,7 @@ use Illuminate\Support\Carbon;
  * @property-read Test $test
  * @method Builder byTargetRatio
  */
-class Variant extends Model
+class Variant extends Model implements VariantContract
 {
     use HasFactory;
 
@@ -35,6 +38,14 @@ class Variant extends Model
         ];
     }
 
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): Factory
+    {
+        return VariantFactory::new();
+    }
+
     public function test(): BelongsTo
     {
         return $this->belongsTo(Test::class, 'ab_test_id');
@@ -42,5 +53,15 @@ class Variant extends Model
 
     public function scopeByTargetRatio(Builder $query, $by = 'asc'): void {
         $query->orderBy('target_ratio', $by);
+    }
+
+    public function getName(): string
+    {
+        return $this->getAttribute('name');
+    }
+
+    public function getTargetRatio(): float
+    {
+        return $this->getAttribute('target_ratio');
     }
 }

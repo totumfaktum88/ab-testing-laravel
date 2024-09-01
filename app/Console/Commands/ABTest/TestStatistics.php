@@ -37,7 +37,7 @@ class TestStatistics extends Command
         $test = Test::findByName($this->argument('name'));
 
         $variants = DB::table('ab_test_statistics_view')
-            ->where('test_id', $test->id)
+            ->where('test_name', $test->name)
             ->get();
 
         $total = $variants->sum(fn($variant) => $variant->count);
@@ -46,9 +46,8 @@ class TestStatistics extends Command
         $this->info('The statistics based on '.$total.' samples.');
         $this->newLine(2);
         $this->table(
-            ['variant_id', 'variant_name', 'count', 'percent'],
+            ['variant_name', 'count', 'percent'],
             $variants->map(fn($variant) => [
-                'variant_id' => $variant->variant_id,
                 'variant_name' => $variant->variant_name,
                 'count' => $variant->count,
                 'percent' => (round($variant->count / $total, 4) * 100).'%'

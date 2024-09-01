@@ -2,23 +2,26 @@
 
 namespace App\Services\ABTest;
 
+use App\Contracts\ABTest\Model\TestContract;
+use App\Contracts\ABTest\Model\VariantContract;
+use App\Contracts\ABTest\RandomSelectorContract;
 use App\Contracts\ABTest\TestServiceContract;
+use App\Contracts\ABTest\VariantStoreContract;
+use App\Enums\ABTest\TestStatusEnum;
 use App\Enums\Session\EventTypeEnum;
 use App\Models\ABTest\Test;
 use App\Models\ABTest\Variant;
 use App\Models\Session;
-use Illuminate\Contracts\Session\Session as SessionContract;
-use Illuminate\Support\Facades\Log;
 
 class TestService implements TestServiceContract {
 
-    private const SESSION_AB_TESTS_KEY = 'ab_tests';
-
     /**
-     * @param SessionContract $sessionManager
+     * @param RandomSelectorContract $selector
+     * @param VariantStoreContract $sessionManager
      */
     public function __construct(
-        private readonly SessionContract $sessionManager,
+        protected readonly RandomSelectorContract $selector,
+        protected readonly VariantStoreContract $storeManager,
     ) {
 
     }
@@ -27,17 +30,15 @@ class TestService implements TestServiceContract {
      * @param string $test
      * @return bool
      */
-    public function hasTestForSession(string $test): bool {
-        return isset($this->getTestsFromSession()[$test]);
+    public function hasTestInStore(string $test): bool {
+        return $this->storeManager->has($test);
     }
 
     /**
      * @return array
      */
-    public function getTestsFromSession(): array {
-        $tests = $this->sessionManager->get(static::SESSION_AB_TESTS_KEY);
-
-        return is_array($tests) ? $tests : [];
+    public function getTestsFromStore(): array {
+        return $this->storeManager->getAll();
     }
 
     /**
@@ -45,20 +46,17 @@ class TestService implements TestServiceContract {
      * @param Variant $variant
      * @return void
      */
-    protected function addTestsToSession(Test $test, Variant $variant): void {
-        $tests = $this->sessionManager->get(static::SESSION_AB_TESTS_KEY);
-        $tests[$test->name] = $variant->name;
-
-        $this->sessionManager->put(static::SESSION_AB_TESTS_KEY, $tests);
+    protected function addTestsToStore(Test $test, Variant $variant): void {
+        $this->storeManager->put($test->name, $variant->name);
     }
 
     /**
      * @param string $test
      * @return string
      */
-    public function getVariantFromSession(string $test): null | string {
-        if ($this->hasTestForSession($test)) {
-            return $this->getTestsFromSession()[$test];
+    public function getVariantFromStore(string $test): null | string {
+        if ($this->hasTestInStore($test)) {
+            return $this->getTestsFromStore()[$test];
         } else {
             return null;
         }
@@ -68,90 +66,71 @@ class TestService implements TestServiceContract {
      * @param Test $test
      * @return int
      */
-    protected function loadVariant(Test $test): null | Variant {
-        $totalRatio = $test->sumVariantRatios();
-        $variants = $test->variants()->byTargetRatio('desc')->get();
+    public function getVariant(TestContract $test): VariantContract {
+        $this->selector->flush();
 
-        $currentThreshold = 0;
-        $ratios = [];
+        $variants = $test->variants()->get();
 
-        $diff = 1;
+        $this->selector->addItems($variants);
 
-        if ($totalRatio != 1) {
-            $diff = $diff / $totalRatio;
-        }
-
-        foreach($variants as $variant){
-            $modifiedRatio = $variant->target_ratio * $diff;
-
-            $ratios[] = [
-                'variant' => $variant,
-                'target_ratio' => $variant->target_ratio,
-                'threshold' => $currentThreshold + $modifiedRatio
-            ];
-
-            $currentThreshold += $modifiedRatio;
-        }
-
-
-
-        $random = mt_rand(1, 100) / 100;
-
-        $variant = null;
-
-        foreach ($ratios as $ratio) {
-            if ($random <= $ratio['threshold']) {
-                $variant = $ratio['variant'];
-                break;
-            }
-        }
-
-        if ($variant === null) {
-            Log::debug(json_encode([$random, $diff, $ratios]));
-        }
-
-        return $variant;
+        return $this->selector->selectVariant();
     }
+
+    public function isTestRunnable(TestContract $test): bool {
+        return $test->status == TestStatusEnum::CREATED;
+    }
+
+    public function isTestStoppable(TestContract $test): bool {
+        return $test->status == TestStatusEnum::RUNNING;
+    }
+
+    public function startTest(TestContract $test): void {
+        if (!$this->isTestRunnable($test)) {
+
+        }
+
+        $test->updateStatus(TestStatusEnum::RUNNING);
+    }
+
+    public function stopTest(TestContract $test): void {
+        if (!$this->isTestStoppable($test)) {
+
+        }
+
+        $test->updateStatus(TestStatusEnum::RUNNING);
+    }
+
 
     /**
      * @param Test $test
      * @param Session $session
-     * @return bool
+     * @return void
      */
-    public function loadTestForSession(Test $test, Session $session): bool {
-        $variant = $this->loadVariant($test);
+    public function loadTestToStore(TestContract $test, Session $session): void {
+        $variant = $this->getVariant($test);
+        $this->addTestsToStore($test, $variant);
 
-        if ($variant) {
-            $this->addTestsToSession($test, $variant);
-
-            $session->events()->create([
-                'type' => EventTypeEnum::TEST_INITIALIZED,
-                'data' => [
-                    'test_id' => $test->id,
-                    'test_name' => $test->name,
-                    'variant_id' => $variant->id,
-                    'variant_name' => $variant->name
-                ]
-            ]);
-
-            return true;
-        }else {
-            return false;
-        }
+        $session->events()->create([
+            'type' => EventTypeEnum::TEST_INITIALIZED,
+            'data' => [
+                'test_name' => $test->name,
+                'variant_name' => $variant->getName()
+            ]
+        ]);
     }
 
     /**
      * @param Session $session
      * @return void
      */
-    public function loadTestsForSession(Session $session): void {
-        $this->removeStoppedTestsFromSession($session);
+    public function loadTestsToStore(Session $session): void {
+        $this->removeStoppedTestsFromStore($session);
 
         $tests = Test::byRunning()->get();
 
         foreach($tests as $test) {
-            if (!$this->hasTestForSession($test->name)) {
-                $this->loadTestForSession($test, $session);
+            if (!$this->hasTestInStore($test->name)) {
+                $this->loadTestToStore($test, $session);
             }
         }
     }
@@ -160,29 +139,25 @@ class TestService implements TestServiceContract {
      * @param Session $session
      * @return array
      */
-    public function removeStoppedTestsFromSession(Session $session): array {
+    public function removeStoppedTestsFromStore(Session $session): array {
         $diff = [];
 
-        if ($this->sessionManager->has(static::SESSION_AB_TESTS_KEY)) {
-            $testsInSession = $this->sessionManager->get(static::SESSION_AB_TESTS_KEY);
-            $testNames = array_keys($testsInSession);
+        $testsInSession = $this->storeManager->getAll();
 
-            $tests = Test::query()->byStopped()->whereIn('name', $testNames)
-                ->get()
-                ->pluck('id')
-                ->toArray();
+        $tests = Test::query()->byRunning()->whereIn('name', array_keys($testsInSession))
+            ->get()
+            ->pluck('name')
+            ->toArray();
 
-            $diff = array_diff_key($testsInSession, $tests);
-            $this->sessionManager->put(static::SESSION_AB_TESTS_KEY, $diff);
+        $this->storeManager->forget(array_diff_key($testsInSession, $tests));
 
-            foreach($tests as $test) {
-                $session->events()->create([
-                    'type' => EventTypeEnum::TEST_REMOVED,
-                    'data' => [
-                        'test_id' => $test->id,
-                    ]
-                ]);
-            }
+        foreach($tests as $test) {
+            $session->events()->create([
+                'type' => EventTypeEnum::TEST_REMOVED,
+                'data' => [
+                    'test_name' => $test,
+                ]
+            ]);
         }
 
         return $diff;
