@@ -44,9 +44,9 @@ class TestStatistics extends Command
 
         $this->newLine(2);
         $this->info('The statistics based on '.$total.' samples.');
-        $this->newLine(2);
+        $this->newLine(1);
         $this->table(
-            ['variant_name', 'count', 'percent'],
+            ['Variant name', 'Count', 'Percent'],
             $variants->map(fn($variant) => [
                 'variant_name' => $variant->variant_name,
                 'count' => $variant->count,
