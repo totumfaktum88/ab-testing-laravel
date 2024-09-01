@@ -34,7 +34,7 @@ class Variant extends Model implements VariantContract
     {
         return [
             ...parent::getCasts(),
-            'target_ratio' => 'float'
+            'target_ratio' => 'int'
         ];
     }
 
@@ -60,7 +60,7 @@ class Variant extends Model implements VariantContract
         return $this->getAttribute('name');
     }
 
-    public function getTargetRatio(): float
+    public function getTargetRatio(): int
     {
         return $this->getAttribute('target_ratio');
     }

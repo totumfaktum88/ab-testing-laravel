@@ -77,8 +77,4 @@ class Test extends Model implements TestContract
         $query->where('status', TestStatusEnum::STOPPED)
             ->whereNotNull('stopped_at');
     }
-
-    public function sumVariantRatios(): float {
-        return $this->variants()->sum('target_ratio');
-    }
 }

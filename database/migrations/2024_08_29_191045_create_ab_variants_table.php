@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('ab_test_id')->constrained('ab_tests');
             $table->string('name');
-            $table->float('target_ratio');
+            $table->integer('target_ratio');
             $table->timestamps();
         });
     }

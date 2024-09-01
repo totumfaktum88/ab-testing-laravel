@@ -20,9 +20,9 @@ class ABTestSeeder extends Seeder
             'name' => 'landing-animation',
             'status' => TestStatusEnum::RUNNING
         ])->variants()->createMany([
-            ['name' => 'delorean', 'target_ratio' => 0.3],
-            ['name' => 'millennium-falcon', 'target_ratio' => 0.2],
-            ['name' => 'basic', 'target_ratio' => 0.5]
+            ['name' => 'delorean', 'target_ratio' => 3],
+            ['name' => 'millennium-falcon', 'target_ratio' => 2],
+            ['name' => 'basic', 'target_ratio' => 5]
         ]);
 
         Test::create([
@@ -30,10 +30,10 @@ class ABTestSeeder extends Seeder
             'name' => 'contact-alignment',
             'status' => TestStatusEnum::RUNNING
         ])->variants()->createMany([
-            ['name' => 'map-top-form-right', 'target_ratio' => 0.25],
-            ['name' => 'map-bottom-form-left', 'target_ratio' => 0.25],
-            ['name' => 'map-hidden-form-right', 'target_ratio' => 0.25],
-            ['name' => 'map-hidden-form-left', 'target_ratio' => 0.25]
+            ['name' => 'map-top-form-right', 'target_ratio' => 1],
+            ['name' => 'map-bottom-form-left', 'target_ratio' => 1],
+            ['name' => 'map-hidden-form-right', 'target_ratio' => 1],
+            ['name' => 'map-hidden-form-left', 'target_ratio' => 1]
         ]);
 
         Test::create([
@@ -41,8 +41,8 @@ class ABTestSeeder extends Seeder
             'name' => 'pricing-alignment',
             'status' => TestStatusEnum::RUNNING
         ])->variants()->createMany([
-            ['name' => 'after-about-us', 'target_ratio' => 0.5],
-            ['name' => 'before-faq', 'target_ratio' => 0.6]
+            ['name' => 'after-about-us', 'target_ratio' => 1],
+            ['name' => 'before-faq', 'target_ratio' => 2]
         ]);
 
         Test::create([
@@ -50,9 +50,9 @@ class ABTestSeeder extends Seeder
             'name' => 'pricing-button-labels',
             'status' => TestStatusEnum::RUNNING
         ])->variants()->createMany([
-            ['name' => 'Shutup and Take My Money!', 'target_ratio' => 0.2],
-            ['name' => 'I give a try', 'target_ratio' => 0.2],
-            ['name' => 'Buy Now', 'target_ratio' => 0.6]
+            ['name' => 'Shutup and Take My Money!', 'target_ratio' => 1],
+            ['name' => 'I give a try', 'target_ratio' => 1],
+            ['name' => 'Buy Now', 'target_ratio' => 3]
         ]);
 
         Test::create([
@@ -60,8 +60,8 @@ class ABTestSeeder extends Seeder
             'name' => 'feature-types',
             'status' => TestStatusEnum::RUNNING
         ])->variants()->createMany([
-            ['name' => 'tabs', 'target_ratio' => 0.2],
-            ['name' => 'services', 'target_ratio' => 0.4],
+            ['name' => 'tabs', 'target_ratio' => 1],
+            ['name' => 'services', 'target_ratio' => 3],
         ]);
     }
 }

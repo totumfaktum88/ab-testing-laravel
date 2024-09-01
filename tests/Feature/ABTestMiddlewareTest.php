@@ -9,9 +9,6 @@ use App\Enums\Session\EventTypeEnum;
 use App\Models\ABTest\Test;
 use App\Models\ABTest\Variant;
 use App\Models\Event;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ABTestMiddlewareTest extends TestCase
@@ -19,8 +16,8 @@ class ABTestMiddlewareTest extends TestCase
     public function testMiddlewareAssignsABTestVariant(): void
     {
         $test = Test::factory()->state(['status' => TestStatusEnum::RUNNING])->has(Variant::factory()->count(2)->sequence(
-            ['name' => 'A', 'target_ratio' => 0.5],
-            ['name' => 'B', 'target_ratio' => 0.5]
+            ['name' => 'A', 'target_ratio' => 1],
+            ['name' => 'B', 'target_ratio' => 1]
         ), 'variants')->create();
 
         $response = $this->get('/');
@@ -36,13 +33,13 @@ class ABTestMiddlewareTest extends TestCase
     public function testMiddlewareAssignsMultipleABTestVariant(): void
     {
         $test1 = Test::factory()->state(['status' => TestStatusEnum::RUNNING])->has(Variant::factory()->count(2)->sequence(
-            ['name' => 'A', 'target_ratio' => 0.5],
-            ['name' => 'B', 'target_ratio' => 0.5]
+            ['name' => 'A', 'target_ratio' => 1],
+            ['name' => 'B', 'target_ratio' => 1]
         ), 'variants')->create();
 
         $test2 = Test::factory()->state(['status' => TestStatusEnum::RUNNING])->has(Variant::factory()->count(2)->sequence(
-            ['name' => 'C', 'target_ratio' => 0.5],
-            ['name' => 'D', 'target_ratio' => 0.5]
+            ['name' => 'C', 'target_ratio' => 1],
+            ['name' => 'D', 'target_ratio' => 1]
         ), 'variants')->create();
 
         $response = $this->get('/');
@@ -62,8 +59,8 @@ class ABTestMiddlewareTest extends TestCase
     public function testStoredABTestVariantConsist(): void
     {
         $test = Test::factory()->state(['status' => TestStatusEnum::RUNNING])->has(Variant::factory()->count(2)->sequence(
-            ['name' => 'A', 'target_ratio' => 0.5],
-            ['name' => 'B', 'target_ratio' => 0.5]
+            ['name' => 'A', 'target_ratio' => 1],
+            ['name' => 'B', 'target_ratio' => 1]
         ), 'variants')->create();
 
         $response = $this->get('/');
@@ -87,13 +84,13 @@ class ABTestMiddlewareTest extends TestCase
     public function testMultipleStoredABTestVariantConsist(): void
     {
         $test1 = Test::factory()->state(['status' => TestStatusEnum::RUNNING])->has(Variant::factory()->count(2)->sequence(
-            ['name' => 'A', 'target_ratio' => 0.5],
-            ['name' => 'B', 'target_ratio' => 0.5]
+            ['name' => 'A', 'target_ratio' => 1],
+            ['name' => 'B', 'target_ratio' => 1]
         ), 'variants')->create();
 
         $test2 = Test::factory()->state(['status' => TestStatusEnum::RUNNING])->has(Variant::factory()->count(2)->sequence(
-            ['name' => 'C', 'target_ratio' => 0.5],
-            ['name' => 'D', 'target_ratio' => 0.5]
+            ['name' => 'C', 'target_ratio' => 1],
+            ['name' => 'D', 'target_ratio' => 1]
         ), 'variants')->create();
 
         $response = $this->get('/');
@@ -125,8 +122,8 @@ class ABTestMiddlewareTest extends TestCase
     public function testStartABTest(): void
     {
         $test = Test::factory()->state(['status' => TestStatusEnum::CREATED])->has(Variant::factory()->count(2)->sequence(
-            ['name' => 'A', 'target_ratio' => 0.5],
-            ['name' => 'B', 'target_ratio' => 0.5]
+            ['name' => 'A', 'target_ratio' => 1],
+            ['name' => 'B', 'target_ratio' => 1]
         ), 'variants')->create();
 
         $response = $this->get('/');
@@ -152,8 +149,8 @@ class ABTestMiddlewareTest extends TestCase
     public function testStopABTest(): void
     {
         $test = Test::factory()->state(['status' => TestStatusEnum::RUNNING])->has(Variant::factory()->count(2)->sequence(
-            ['name' => 'A', 'target_ratio' => 0.5],
-            ['name' => 'B', 'target_ratio' => 0.5]
+            ['name' => 'A', 'target_ratio' => 1],
+            ['name' => 'B', 'target_ratio' => 1]
         ), 'variants')->create();
 
         $response = $this->get('/');
@@ -178,10 +175,10 @@ class ABTestMiddlewareTest extends TestCase
 
     public function testWeightedRandomSelection(): void {
         $test = Test::factory()->state(['status' => TestStatusEnum::RUNNING])->has(Variant::factory()->count(4)->sequence(
-            ['name' => 'A', 'target_ratio' => 0.4],
-            ['name' => 'B', 'target_ratio' => 0.3],
-            ['name' => 'C', 'target_ratio' => 0.2],
-            ['name' => 'D', 'target_ratio' => 0.1]
+            ['name' => 'A', 'target_ratio' => 4],
+            ['name' => 'B', 'target_ratio' => 3],
+            ['name' => 'C', 'target_ratio' => 2],
+            ['name' => 'D', 'target_ratio' => 1]
         ), 'variants')->create();
 
         for($i = 0; $i <= 500; $i++) {
@@ -198,6 +195,7 @@ class ABTestMiddlewareTest extends TestCase
             ->whereJsonContains('data->test_name', $test->name)
             ->get();
 
+        $totalRatio = $variants->sum(fn($i) => $i->getTargetRatio());
         $totalCount = $variantStats->count();
         $tolerance = 5;
 
@@ -205,8 +203,7 @@ class ABTestMiddlewareTest extends TestCase
             $count = $variantStats->filter(fn($d) => $d['data']['variant_name'] == $variant->name)->count();
 
             $percentage = ($count / $totalCount) * 100;
-            $expectedPercentage = ($totalCount * $variant->getTargetRatio() / $totalCount) * 100;
-            dump($percentage);
+            $expectedPercentage = ($variant->getTargetRatio() / $totalRatio) * 100;
 
             $this->assertEqualsWithDelta($expectedPercentage, $percentage, $tolerance);
         }

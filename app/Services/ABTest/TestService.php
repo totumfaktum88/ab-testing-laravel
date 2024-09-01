@@ -17,7 +17,7 @@ class TestService implements TestServiceContract {
 
     /**
      * @param RandomSelectorContract $selector
-     * @param VariantStoreContract $sessionManager
+     * @param VariantStoreContract $storeManager
      */
     public function __construct(
         protected readonly RandomSelectorContract $selector,
@@ -26,34 +26,18 @@ class TestService implements TestServiceContract {
 
     }
 
-    /**
-     * @param string $test
-     * @return bool
-     */
     public function hasTestInStore(string $test): bool {
         return $this->storeManager->has($test);
     }
 
-    /**
-     * @return array
-     */
     public function getTestsFromStore(): array {
         return $this->storeManager->getAll();
     }
 
-    /**
-     * @param Test $test
-     * @param Variant $variant
-     * @return void
-     */
     protected function addTestsToStore(Test $test, Variant $variant): void {
         $this->storeManager->put($test->name, $variant->name);
     }
 
-    /**
-     * @param string $test
-     * @return string
-     */
     public function getVariantFromStore(string $test): null | string {
         if ($this->hasTestInStore($test)) {
             return $this->getTestsFromStore()[$test];
@@ -62,10 +46,6 @@ class TestService implements TestServiceContract {
         }
     }
 
-    /**
-     * @param Test $test
-     * @return int
-     */
     public function getVariant(TestContract $test): VariantContract {
         $this->selector->flush();
 
@@ -100,12 +80,6 @@ class TestService implements TestServiceContract {
         $test->updateStatus(TestStatusEnum::RUNNING);
     }
 
-
-    /**
-     * @param Test $test
-     * @param Session $session
-     * @return void
-     */
     public function loadTestToStore(TestContract $test, Session $session): void {
         $variant = $this->getVariant($test);
         $this->addTestsToStore($test, $variant);
@@ -119,10 +93,6 @@ class TestService implements TestServiceContract {
         ]);
     }
 
-    /**
-     * @param Session $session
-     * @return void
-     */
     public function loadTestsToStore(Session $session): void {
         $this->removeStoppedTestsFromStore($session);
 
@@ -135,10 +105,6 @@ class TestService implements TestServiceContract {
         }
     }
 
-    /**
-     * @param Session $session
-     * @return array
-     */
     public function removeStoppedTestsFromStore(Session $session): array {
         $diff = [];
 

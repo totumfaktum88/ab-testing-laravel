@@ -53,17 +53,11 @@ class RandomSelector implements RandomSelectorContract
 
         $totalRatio = $this->items->sum(fn($variant) => $variant->getTargetRatio());
 
-        $diff = 1;
-
-        if ($totalRatio != 1) {
-            $diff = $diff / $totalRatio;
-        }
-
         $currentThreshold = 0;
         $thresholds = [];
 
         foreach($this->items as $item){
-            $modifiedRatio = $item->getTargetRatio() * $diff;
+            $modifiedRatio = $item->getTargetRatio() / $totalRatio;
 
             $thresholds[] = $currentThreshold + $modifiedRatio;
 
